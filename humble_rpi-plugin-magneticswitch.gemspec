@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'humble_rpi-plugin-magneticswitch'
-  s.version = '0.2.0'
+  s.version = '0.2.1'
   s.summary = 'A Humble RPi plugin which detects the opening or closing of a door using a magnetic switch sensor.'
   s.authors = ['James Robertson']
   s.files = Dir['lib/humble_rpi-plugin-magneticswitch.rb']
