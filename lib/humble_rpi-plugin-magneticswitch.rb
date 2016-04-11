@@ -3,30 +3,18 @@
 # file: humble_rpi-plugin-magneticswitch.rb
 
 
-require 'pi_piper'
+require 'rpi_pinin'
 
 
 class HumbleRPiPluginMagneticSwitch
-  include PiPiper
+
 
   def initialize(settings: {}, variables: {})
 
     @nc = settings[:nc] || true
-    @pins = settings[:pins]
+    @pins = settings[:pins].map {|x| RPiPinIn.new x}
     @notifier = variables[:notifier]
-    @device_id = variables[:device_id] || 'pi'
-      
-    at_exit do
-      
-      @pins.each do |pin|
-
-        uexp = open("/sys/class/gpio/unexport", "w")
-        uexp.write(pin)
-        uexp.close
-      
-      end
-    end
-
+    @device_id = variables[:device_id] || 'pi'      
     
   end
 
@@ -38,29 +26,26 @@ class HumbleRPiPluginMagneticSwitch
         
     puts 'ready to detect magnetic switches'
     
-    @pins.each.with_index do |button, i|
+    @pins.each.with_index do |pin, i|
       
-      puts 'magnetic switch sensor %s on GPIO %s enabled ' % [i+1, button]
+      puts 'magnetic switch sensor %s on GPIO %s enabled ' % [i+1, pin.to_s]
       
       n = (i+1).to_s
       
-      PiPiper.watch :pin => button.to_i, :invert => nc do |pin|
+      Thread.new do      
         
-        state = case pin.value
-        when 1
-          :open
-        when 0          
-          :closed
+        pin.watch do |value|
+          
+          state = value == 0 ? :open : :closed
+          
+          notifier.notice "%s/magneticswitch/%s: door %s" % \
+                                                      [device_id, i, state]
+          
         end
         
-        notifier.notice "%s/magneticswitch/%s: door %s" % [device_id, i, state]
-
       end
       
     end
-    
-    PiPiper.wait    
-
     
   end
   
