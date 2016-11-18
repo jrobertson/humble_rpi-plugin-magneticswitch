@@ -36,7 +36,7 @@ class HumbleRPiPluginMagneticSwitch
         
         pin.watch do |value|
           
-          state = value == 0 ? :open : :closed
+          state = value == 0 ? :opened : :closed
           
           notifier.notice "%s/magneticswitch/%s: door %s" % \
                                                       [device_id, i, state]
