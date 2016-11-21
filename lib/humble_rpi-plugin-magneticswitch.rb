@@ -4,6 +4,7 @@
 
 
 require 'rpi_pinin'
+require 'self-defense'
 
 
 class HumbleRPiPluginMagneticSwitch
@@ -38,8 +39,30 @@ class HumbleRPiPluginMagneticSwitch
           
           state = value == 0 ? :opened : :closed
           
+          input_operation = :unknown
+          
+          strategy = lambda do |defense|
+
+            coping_with_it = []
+            coping_with_it << defense.rapid?(0.5)
+
+            input_operation = coping_with_it.all? ? :normal : :erratic
+          end
+
+          # detect erratic input behaviour by checking if the door is 
+          # opened within 0.5 of a second after it was last opened
+          
+          SelfDefense.new(&strategy) if state == :opened
+          
+          if input_operation == :erratic then
+            
+            notifier.notice "%s/magneticswitch/%s: " + \
+                " door error: Erratic input operation" % [device_id, i]
+            raise 'humble_rpi-plugin-magneticwitch: Erratic input operation'
+          end
+              
           notifier.notice "%s/magneticswitch/%s: door %s" % \
-                                                      [device_id, i, state]
+                                                  [device_id, i, state]
           
         end
         
