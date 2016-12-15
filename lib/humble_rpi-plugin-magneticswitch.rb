@@ -7,6 +7,11 @@ require 'rpi_pinin'
 require 'self-defense'
 
 
+Thread.abort_on_exception=true
+
+class PluginMagneticSwitchException < Exception
+end
+
 class HumbleRPiPluginMagneticSwitch
 
 
@@ -16,6 +21,7 @@ class HumbleRPiPluginMagneticSwitch
     @pins = settings[:pins].map {|x| RPiPinIn.new x, pull: :up}
     @notifier = variables[:notifier]
     @device_id = variables[:device_id] || 'pi'      
+
     
   end
 
@@ -26,6 +32,7 @@ class HumbleRPiPluginMagneticSwitch
     nc = @nc
         
     puts 'ready to detect magnetic switches'
+
     
     @pins.each.with_index do |pin, i|
       
@@ -33,8 +40,9 @@ class HumbleRPiPluginMagneticSwitch
       
       n = (i+1).to_s
       
-      Thread.new do      
-        
+      threads = []
+      threads << Thread.new do      
+
         pin.watch do |value|
           
           state = value == 0 ? :opened : :closed
@@ -55,10 +63,10 @@ class HumbleRPiPluginMagneticSwitch
           SelfDefense.new(&strategy) if state == :opened
           
           if input_operation == :erratic then
-            
+
             notifier.notice "%s/magneticswitch/%s: " + \
                 " door error: Erratic input operation" % [device_id, i]
-            raise 'humble_rpi-plugin-magneticwitch: Erratic input operation'
+            raise PluginMagneticSwitchException, 'Erratic input operation'
           end
               
           notifier.notice "%s/magneticswitch/%s: door %s" % \
@@ -67,6 +75,7 @@ class HumbleRPiPluginMagneticSwitch
         end
         
       end
+      threads.each(&:join)
       
     end
     
