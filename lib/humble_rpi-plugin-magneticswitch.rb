@@ -18,7 +18,7 @@ class HumbleRPiPluginMagneticSwitch
   def initialize(settings: {}, variables: {})
 
     @nc = settings[:nc] || true
-    @pins = settings[:pins].map {|x| RPiPinIn.new x, pull: :up}
+    @pins = settings[:pins].map {|x| RPiPinIn.new x, pull: settings[:pull]}
     @notifier = variables[:notifier]
     @device_id = variables[:device_id] || 'pi'      
 
@@ -32,7 +32,6 @@ class HumbleRPiPluginMagneticSwitch
     nc = @nc
         
     puts 'ready to detect magnetic switches'
-
     
     @pins.each.with_index do |pin, i|
       
